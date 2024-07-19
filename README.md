@@ -1,5 +1,14 @@
 ## Explicação Detalhada do Código para Processamento de Arquivos da Amazon S3 e Envio ao OpenAI Assistant
 
+### Sumário
+  * [1. Do que se trata o código e qual o seu objetivo](#1-do-que-se-trata-o-c-digo-e-qual-o-seu-objetivo)
+  * [2. O que ele faz](#2-o-que-ele-faz)
+  * [3. Função Principal](#3-fun--o-principal)
+  * [4. Funções Auxiliares](#4-fun--es-auxiliares)
+  * [5. O que é preciso substituir em termos de dados e informações para fazer o código funcionar](#5-o-que---preciso-substituir-em-termos-de-dados-e-informa--es-para-fazer-o-c-digo-funcionar)
+  * [6. Como instalar as dependências](#6-como-instalar-as-depend-ncias)
+  * [7. Código na íntegra](#7-c-digo-na--ntegra)
+
 ### 1. Do que se trata o código e qual o seu objetivo
 
 Este código em C# é um exemplo de como processar arquivos armazenados na Amazon S3 (tanto PDFs quanto imagens) e enviar seu conteúdo para a API do OpenAI Assistant para análise. O objetivo é criar uma solução automatizada que possa:
