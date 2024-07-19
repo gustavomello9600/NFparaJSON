@@ -232,42 +232,41 @@ private async Task<string> SendToAssistantAsync(string content, bool isImage = f
     using var client = new HttpClient();
     client.DefaultRequestHeaders.Add("Authorization", $"Bearer {_openAiApiKey}");
 
-    // Criar uma nova thread com a mensagem do usuário
-    var messageContent = new List<object>
+    // Cria a lista de mensagens para a conversa
+    var messages = new List<object>
     {
-        new { role = "user", content = isImage ? (object)new { type = "image_base64", data = content } : content }
+        new { role = "user", content }
     };
 
-    var createThreadResponse = await client.PostAsync(
-        "https://api.openai.com/v1/threads",
-        new StringContent(JsonConvert.SerializeObject(new
-        {
-            messages = messageContent
-        }), System.Text.Encoding.UTF8, "application/json")
+    if (isImage)
+    {
+        messages[0] = new 
+        { 
+            role = "user", 
+            content = new List<object>
+            {
+                new { type = "image_base64", image_base64 = content }
+            }
+        };
+    }
+
+    var requestBody = new
+    {
+        model = "gpt-4o",
+        messages = messages,
+        max_tokens = 8000,
+        temperature = 0.2
+    };
+
+    var response = await client.PostAsync(
+        "https://api.openai.com/v1/chat/completions",
+        new StringContent(JsonConvert.SerializeObject(requestBody), System.Text.Encoding.UTF8, "application/json")
     );
-    createThreadResponse.EnsureSuccessStatusCode();
+    response.EnsureSuccessStatusCode();
 
-    var threadContent = await createThreadResponse.Content.ReadAsStringAsync();
-    var thread = JObject.Parse(threadContent);
-    var threadId = thread["id"].ToString();
-
-    // Iniciar uma execução com o assistente na thread criada
-    var runResponse = await client.PostAsync(
-        "https://api.openai.com/v1/threads/runs",
-        new StringContent(JsonConvert.SerializeObject(new
-        {
-            thread_id = threadId,
-            assistant_id = "your_assistant_id",  // Substitua pelo ID do seu assistente
-            model = "gpt-4",  // Use o modelo apropriado
-            max_tokens = 100,
-            response_format = "json"
-        }), System.Text.Encoding.UTF8, "application/json")
-    );
-    runResponse.EnsureSuccessStatusCode();
-
-    var runContent = await runResponse.Content.ReadAsStringAsync();
-    var runResult = JObject.Parse(runContent);
-    return runResult.ToString();
+    var responseContent = await response.Content.ReadAsStringAsync();
+    var responseObject = JObject.Parse(responseContent);
+    return responseObject.ToString();
 }
 ```
 
