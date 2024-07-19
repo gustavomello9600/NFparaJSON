@@ -132,26 +132,32 @@ private bool PdfContainsText(Stream pdfStream)
 ```
 
 #### `ExtractTextFromPdf`
-Extrai texto de um PDF utilizando Tesseract para OCR.
 
 ```csharp
 private string ExtractTextFromPdf(Stream pdfStream)
 {
-    // Using Tesseract for OCR
-    var tessdataPath = "./tessdata";
-    var text = "";
-    using var engine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
     using var document = PdfReader.Open(pdfStream, PdfDocumentOpenMode.ReadOnly);
+    var text = new StringBuilder();
 
     foreach (var page in document.Pages)
     {
-        using var image = RenderPageToImage(page);
-        using var pix = PixConverter.ToPix((Bitmap)image);
-        using var pageText = engine.Process(pix);
-        text += pageText.GetText();
+        var contents = ContentReader.ReadContent(page);
+        foreach (var content in contents)
+        {
+            if (content is COperator op && op.OpCode.Name == "Tj")
+            {
+                foreach (var operand in op.Operands)
+                {
+                    if (operand is CString str)
+                    {
+                        text.Append(str.Value);
+                    }
+                }
+            }
+        }
     }
 
-    return text;
+    return text.ToString();
 }
 ```
 
@@ -298,17 +304,12 @@ Você precisará instalar algumas bibliotecas para que o código funcione. Use o
    Install-Package PdfSharp
    ```
 
-2. **Tesseract**: Para OCR.
-   ```sh
-   Install-Package Tesseract
-   ```
-
-3. **Newtonsoft.Json**: Para manipulação de JSON.
+2. **Newtonsoft.Json**: Para manipulação de JSON.
    ```sh
    Install-Package Newtonsoft.Json
    ```
 
-4. **AWS SDK para .NET**: Para acessar a Amazon S3.
+3. **AWS SDK para .NET**: Para acessar a Amazon S3.
    ```sh
    Install-Package AWSSDK.S3
    ```
@@ -426,21 +427,28 @@ public class S3PdfProcessor
 
     private string ExtractTextFromPdf(Stream pdfStream)
     {
-        // Using Tesseract for OCR
-        var tessdataPath = "./tessdata";
-        var text = "";
-        using var engine = new TesseractEngine(tessdataPath, "eng", EngineMode.Default);
-        using var document = PdfReader.Open(pdfStream, PdfDocumentOpenMode.ReadOnly);
+    using var document = PdfReader.Open(pdfStream, PdfDocumentOpenMode.ReadOnly);
+    var text = new StringBuilder();
 
-        foreach (var page in document.Pages)
+    foreach (var page in document.Pages)
+    {
+        var contents = ContentReader.ReadContent(page);
+        foreach (var content in contents)
         {
-            using var image = RenderPageToImage(page);
-            using var pix = PixConverter.ToPix((Bitmap)image);
-            using var pageText = engine.Process(pix);
-            text += pageText.GetText();
+            if (content is COperator op && op.OpCode.Name == "Tj")
+            {
+                foreach (var operand in op.Operands)
+                {
+                    if (operand is CString str)
+                    {
+                        text.Append(str.Value);
+                    }
+                }
+            }
         }
+    }
 
-        return text;
+    return text.ToString();
     }
 
     private Image RenderPageToImage(PdfPage page)
